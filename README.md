@@ -8,10 +8,10 @@
 
 ## 🚀 Key Features
 
+*   **Flexible Deployment:** Run `vorp` in two modes:
+    *   **Local Mode:** Use your own API keys for direct access to LLM providers.
+    *   **Cloud Mode:** Route requests through a secure proxy backend (either hosted by you or a public instance) for a frictionless experience without personal API keys.
 *   **RAG (Chat with Codebase):** Index any project folder to enable context-aware queries.
-    *   **Project Isolation:** Uses a global vector database with metadata filtering. Context from Project A will never leak into Project B.
-    *   **Local Storage:** All embeddings are stored locally in `~/.vorp_rag_db`.
-*   **Multi-Model Support:** Integrates with Groq and Google Gemini to provide access to models like Llama 3.3, DeepSeek R1, and Gemini 2.5 Pro.
 *   **Session Persistence:** Chat history is saved locally, allowing you to resume sessions later.
 *   **Context Management:** Manually inject specific files into the context window for targeted assistance.
 *   **Cross-Platform:** Designed to work consistently on Windows, macOS, and Linux.
@@ -48,14 +48,74 @@
     pip install -e .
     ```
 
-4.  **Configure API Keys:**
-    Create a `.env` file in the root directory and add your keys:
+4.  **Configure API Keys (Local Mode):**
+    For **Local Mode**, you need to provide your own API keys. Create a `.env` file in the root directory and add your keys:
     ```env
-    GROQ_API_KEY=your_key_here
-    GEMINI_API_KEY=your_key_here
+    GROQ_API_KEY=your_groq_api_key_here
+    GEMINI_API_KEY=your_gemini_api_key_here
     ```
+    If these keys are not found, `vorp` will automatically switch to **Cloud Mode**.
 
-## 🎮 Usage
+5.  **Cloud Mode Configuration (Optional, for Custom Backends):**
+    If you are running your own backend server or wish to use a specific Cloud Mode instance, you can configure `vorp` to point to it.
+    Add the following to your `.env` file (or set as environment variables):
+    ```env
+    VORP_BACKEND_URL="https://your-custom-backend-url.com/chat"
+    VORP_ACCESS_TOKEN="your_access_token" # Only needed if your backend requires a custom token
+    ```
+    *Note: The CLI has a hardcoded public access token (`sk-vorp-public-beta`) that is used if `VORP_ACCESS_TOKEN` is not explicitly provided, and local API keys are missing. This token must also be configured on your backend server.*
+
+### Cloud Mode Backend
+
+For users who prefer not to manage their own API keys, `vorp` can operate in **Cloud Mode**. In this mode, the CLI routes chat requests through a proxy backend server you host. This server securely holds your LLM API keys and handles the communication with providers like Groq and Google Gemini.
+
+**Architecture:**
+*   The CLI sends chat requests to your hosted backend (e.g., `https://your-backend.vercel.app/chat`).
+*   The backend validates an `Authorization` header with an access token (which is either a public default or one you supply).
+*   The backend securely uses its own environment variables (`GROQ_API_KEY`, `GEMINI_API_KEY`) to call the LLM providers.
+*   LLM responses are streamed back through the backend to the CLI.
+
+**Benefits:**
+*   **Frictionless User Experience:** Users don't need to provide their own API keys.
+*   **Centralized Control:** You control API key management, rate limits, and monitoring on your backend.
+*   **Security:** Your private API keys are never exposed to client-side applications.
+
+**Deployment (Example using Vercel):**
+
+1.  **Project Setup:**
+    *   Ensure your `server/` directory contains `app.py` and `requirements.txt`.
+    *   Place a `vercel.json` file in your project root with the following (adjust `runtime` if needed):
+        ```json
+        {
+          "version": 2,
+          "builds": [
+            {
+              "src": "server/app.py",
+              "use": "@vercel/python",
+              "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.10"
+              }
+            }
+          ],
+          "routes": [
+            {
+              "src": "/(.*)",
+              "dest": "server/app.py"
+            }
+          ]
+        }
+        ```
+2.  **Host on Vercel:**
+    *   Commit and push your entire project (including `server/` and `vercel.json`) to a GitHub repository.
+    *   Go to [vercel.com](https://vercel.com/) and create a new project from your repository.
+    *   **Configure Build:** In Vercel Project Settings, set the **Root Directory** to `server` (this tells Vercel to only build the backend part of your repo).
+    *   **Environment Variables:** Add the following to your Vercel project's Environment Variables:
+        *   `GROQ_API_KEY`: Your actual Groq API key.
+        *   `GEMINI_API_KEY`: Your actual Google Gemini API key.
+        *   `VORP_ACCESS_TOKEN`: Set this to `sk-vorp-public-beta` (to match the CLI's default hardcoded token).
+    *   Deploy the project.
+3.  **Update CLI:** Once deployed, your CLI will automatically use this backend if local API keys are not found, or you can explicitly set `VORP_BACKEND_URL` in your `.env` file.
 
 Start the application:
 ```bash
