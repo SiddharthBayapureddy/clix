@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import json
 import typer
+import requests
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -24,14 +25,36 @@ console = Console()
 CHAT_HISTORY = Path.home() / ".vorp_chat_history.json"
 MODEL_NAME = "groq/llama-3.1-8b-instant" 
 MAX_HISTORY_LENGTH = 20
+VORP_BACKEND_URL = os.getenv("VORP_BACKEND_URL", "http://localhost:8000/chat")
+DEFAULT_PUBLIC_ACCESS_TOKEN = "sk-vorp-public-beta" # Hardcoded public token
 
 SUPPORTED_MODELS = [
-    {"name": "Llama 3.3 70B (Smart)", "id": "groq/llama-3.3-70b-versatile", "provider": "Groq"},
-    {"name": "Llama 3.1 8B (Fast)", "id": "groq/llama-3.1-8b-instant", "provider": "Groq"},
+    # Groq / Llama
+    {"name": "Llama 3.3 70B (Versatile)", "id": "groq/llama-3.3-70b-versatile", "provider": "Groq"},
+    {"name": "Llama 3.1 8B (Instant)", "id": "groq/llama-3.1-8b-instant", "provider": "Groq"},
+    {"name": "Llama 4 Maverick 17B", "id": "groq/meta-llama/llama-4-maverick-17b-128e-instruct", "provider": "Groq"},
+    {"name": "Llama 4 Scout 17B", "id": "groq/meta-llama/llama-4-scout-17b-16e-instruct", "provider": "Groq"},
+    {"name": "Llama Guard 4 12B", "id": "groq/meta-llama/llama-guard-4-12b", "provider": "Groq"},
+    
+    # Groq / Other
     {"name": "DeepSeek R1 Distill 70B", "id": "groq/deepseek-r1-distill-llama-70b", "provider": "Groq"},
     {"name": "Gemma 2 9B", "id": "groq/gemma2-9b-it", "provider": "Groq"},
     {"name": "Mixtral 8x7B", "id": "groq/mixtral-8x7b-32768", "provider": "Groq"},
-    {"name": "Llama 3 70B (Legacy)", "id": "groq/llama3-70b-8192", "provider": "Groq"},
+    {"name": "Qwen 3 32B", "id": "groq/qwen/qwen3-32b", "provider": "Groq"},
+    {"name": "Allam 2 7B", "id": "groq/allam-2-7b", "provider": "Groq"},
+    
+    # Groq / Experimental
+    {"name": "Groq Compound", "id": "groq/groq/compound", "provider": "Groq"},
+    {"name": "Groq Compound Mini", "id": "groq/groq/compound-mini", "provider": "Groq"},
+    
+    # Moonshot
+    {"name": "Kimi k2 Instruct", "id": "groq/moonshotai/kimi-k2-instruct", "provider": "Groq"},
+    
+    # OpenAI (via Groq/Litellm mapping if applicable, otherwise assume standard routing)
+    {"name": "GPT-OSS 120B", "id": "groq/openai/gpt-oss-120b", "provider": "Groq"},
+    {"name": "GPT-OSS 20B", "id": "groq/openai/gpt-oss-20b", "provider": "Groq"},
+
+    # Google
     {"name": "Gemini 2.5 Flash", "id": "gemini/gemini-2.5-flash", "provider": "Google"},
     {"name": "Gemini 2.5 Pro", "id": "gemini/gemini-2.5-pro", "provider": "Google"},
 ]
@@ -106,9 +129,12 @@ def chat(
         console.print("\n[dim]Usage: vorp --model <Model ID>[/dim]")
         raise typer.Exit()
 
+    cloud_mode = False
+    access_token_for_backend = None
+    
     if not os.getenv("GROQ_API_KEY") and not os.getenv("GEMINI_API_KEY"):
-        console.print("[bold red]Error:[/bold red] No API Key found in .env file.")
-        raise typer.Exit()
+        cloud_mode = True
+        access_token_for_backend = os.getenv("VORP_ACCESS_TOKEN", DEFAULT_PUBLIC_ACCESS_TOKEN)
     
     from litellm import completion
 
@@ -127,12 +153,17 @@ def chat(
 [bold cyan]  \ \  / / | |  | || |__) || |__) |[/bold cyan]
 [bold cyan]   \ \/ /  | |  | ||  _  / |  ___/ [/bold cyan]
 [bold cyan]    \  /   | |__| || | \ \ | |     [/bold cyan]
-[bold cyan]     \/     \____/ |_|  \_\|_|     [/bold cyan] [dim]v1.0[/dim]"""
+[bold cyan]     \/     \____/ |_|  \_\|_|     [/bold cyan]"""
     
     console.print(ascii_art)
     console.print("\n")
     console.print(f"[bold magenta]-> MODEL:[/bold magenta] [cyan]{model_display_name}[/cyan]")
-    console.print(f"[bold green]-> STATUS:[/bold green] [dim]ONLINE[/dim]")
+    
+    if cloud_mode:
+        console.print(f"[bold green]-> STATUS:[/bold green] [dim]ONLINE (Cloud Mode via {VORP_BACKEND_URL})[/dim]")
+    else:
+        console.print(f"[bold green]-> STATUS:[/bold green] [dim]ONLINE (Local Mode)[/dim]")
+        
     console.print("[dim]──────────────────────────[/dim]")
 
     # RAG State
@@ -287,23 +318,46 @@ def chat(
                 )
                 live.update(grid)
 
-
-                response = completion(
-                    model=active_model,
-                    messages=llm_messages,
-                    stream=True
-                )
-                
-                for chunk in response:
-                    content = chunk.choices[0].delta.content or ""
-                    response_text += content
-
-                    grid = Table.grid(padding=(0, 1)) 
-                    grid.add_column(style="bold blue", no_wrap=True)
-                    grid.add_column()
+                if cloud_mode:
+                    # Cloud Mode: Proxy through Backend
+                    try:
+                        payload = {
+                            "model": active_model,
+                            "messages": llm_messages,
+                            "stream": True
+                        }
+                        headers = {"Authorization": f"Bearer {access_token_for_backend}"}
+                        
+                        with requests.post(VORP_BACKEND_URL, json=payload, headers=headers, stream=True, timeout=60) as r:
+                            r.raise_for_status()
+                            for chunk in r.iter_content(chunk_size=1024, decode_unicode=True):
+                                if chunk:
+                                    response_text += chunk
+                                    grid = Table.grid(padding=(0, 1)) 
+                                    grid.add_column(style="bold blue", no_wrap=True)
+                                    grid.add_column()
+                                    grid.add_row("Vorp >", Markdown(response_text))
+                                    live.update(grid)
+                    except Exception as e:
+                         response_text = f"Error communicating with backend: {e}"
+                else:
+                    # Local Mode: Use litellm directly
+                    response = completion(
+                        model=active_model,
+                        messages=llm_messages,
+                        stream=True
+                    )
                     
-                    grid.add_row("Vorp >", Markdown(response_text))
-                    live.update(grid)
+                    for chunk in response:
+                        content = chunk.choices[0].delta.content or ""
+                        response_text += content
+
+                        grid = Table.grid(padding=(0, 1)) 
+                        grid.add_column(style="bold blue", no_wrap=True)
+                        grid.add_column()
+                        
+                        grid.add_row("Vorp >", Markdown(response_text))
+                        live.update(grid)
             
 
             messages.append({"role": "assistant", "content": response_text})
