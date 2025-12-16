@@ -2,6 +2,7 @@ README.md
 pyproject.toml
 src/clix/__init__.py
 src/clix/main.py
+src/clix/rag.py
 src/clix_cli.egg-info/PKG-INFO
 src/clix_cli.egg-info/SOURCES.txt
 src/clix_cli.egg-info/dependency_links.txt

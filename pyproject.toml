@@ -13,7 +13,8 @@ dependencies = [
     "typer",
     "litellm",
     "rich",
-    "python-dotenv"
+    "python-dotenv",
+    "chromadb"
 ]
 
 
