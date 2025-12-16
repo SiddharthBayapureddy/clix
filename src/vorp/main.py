@@ -25,7 +25,7 @@ console = Console()
 CHAT_HISTORY = Path.home() / ".vorp_chat_history.json"
 MODEL_NAME = "groq/llama-3.1-8b-instant" 
 MAX_HISTORY_LENGTH = 20
-VORP_BACKEND_URL = os.getenv("VORP_BACKEND_URL", "http://localhost:8000/chat")
+VORP_BACKEND_URL = "https://vorp-sigma.vercel.app/chat"
 DEFAULT_PUBLIC_ACCESS_TOKEN = "sk-vorp-public-beta" # Hardcoded public token
 
 SUPPORTED_MODELS = [
