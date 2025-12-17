@@ -1,6 +1,10 @@
 # 🧠 vorp
 
-<img src="https://raw.githubusercontent.com/SiddharthBayapureddy/vorp/master/logo.jpeg" alt="vorp logo" width="200">
+## 🎬 Demo
+
+![vorp demo](demo.gif)
+
+
 
 **vorp** is a terminal-based AI pair programmer. It indexes your codebase, allowing you to ask context-aware questions and retrieve relevant code snippets without leaving your command line environment.
 
@@ -15,6 +19,7 @@
 *   **Session Persistence:** Chat history is saved locally, allowing you to resume sessions later.
 *   **Context Management:** Manually inject specific files into the context window for targeted assistance.
 *   **Cross-Platform:** Designed to work consistently on Windows, macOS, and Linux.
+
 
 ## 🛠️ Installation
 

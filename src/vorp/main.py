@@ -24,7 +24,7 @@ console = Console()
 # Configuration
 CHAT_HISTORY = Path.home() / ".vorp_chat_history.json"
 MODEL_NAME = "groq/llama-3.1-8b-instant" 
-MAX_HISTORY_LENGTH = 20
+MAX_HISTORY_LENGTH = 30
 VORP_BACKEND_URL = "https://vorp-sigma.vercel.app/chat"
 DEFAULT_PUBLIC_ACCESS_TOKEN = "sk-vorp-public-beta" # Hardcoded public token
 
@@ -149,11 +149,11 @@ def chat(
     
     ascii_art = r"""
 [bold cyan] __      __  ____   _____   _____ [/bold cyan]
-[bold cyan] \ \    / / / __ \ |  __ \ |  __ \[/bold cyan]
+[bold cyan] \ \    / / / __ \ |  __ \ |  __ \  [/bold cyan]
 [bold cyan]  \ \  / / | |  | || |__) || |__) |[/bold cyan]
 [bold cyan]   \ \/ /  | |  | ||  _  / |  ___/ [/bold cyan]
 [bold cyan]    \  /   | |__| || | \ \ | |     [/bold cyan]
-[bold cyan]     \/     \____/ |_|  \_\|_|     [/bold cyan]"""
+[bold cyan]     \/     \____/ |_|  \_\|_|    [/bold cyan]"""
     
     console.print(ascii_art)
     console.print("\n")
