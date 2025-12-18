@@ -4,7 +4,7 @@
 
 ![vorp demo](assets/demo.gif)
 
-**Vorp** is a terminal-based AI pair programmer and companion. It seamlessly indexes your codebase, allowing you to ask context-aware questions, retrieve relevant code snippets, and even modify files without leaving your command line environment.
+**Vorp** is a terminal-based AI pair programmer and companion. It seamlessly indexes your codebase, allowing you to ask context-aware questions, retrieve relevant code snippets, and even modify files or execute commands without leaving your command line environment.
 
 > **Note:** This project is under active development.
 
@@ -13,20 +13,22 @@
 *   **Flexible Deployment:** Run `vorp` in two modes:
     *   **Local Mode:** Use your own API keys for direct access to LLM providers (Groq, Google Gemini).
     *   **Cloud Mode:** Route requests through a secure proxy backend (either hosted by you or a public instance) for a frictionless experience without personal API keys.
-*   **RAG (Chat with Codebase):** Index any project folder to enable context-aware queries.
-*   **File System Capabilities:** The agent can read, write, and manage files on your local machine.
+*   **RAG (Chat with Codebase):** Index any project folder to enable context-aware queries using local embeddings.
+*   **Autonomous Tools:** The agent can read, write, and manage files, list directories, and execute shell commands.
 *   **Session Persistence:** Chat history is saved locally, allowing you to resume sessions later.
 *   **Context Management:** Manually inject specific files into the context window for targeted assistance.
-*   **Cross-Platform:** Designed to work consistently on Windows, macOS, and Linux.
+*   **Safety First:** Critical operations like file deletion or shell execution require explicit user confirmation.
+*   **Cross-Platform:** Designed to work consistently on Windows (PowerShell/CMD), macOS, and Linux.
 
 ## 🛠️ Installation
 
-### Prerequisites
-*   **Python 3.10+**
-*   **Git**
+### Via PyPI (Recommended)
+You can install Vorp directly from PyPI:
+```bash
+pip install vorp
+```
 
-### Steps
-
+### From Source
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/SiddharthBayapureddy/vorp.git
@@ -34,39 +36,20 @@
     ```
 
 2.  **Create a virtual environment:**
-    *   **Windows:**
-        ```powershell
-        python -m venv venv
-        .\venv\Scripts\activate
-        ```
-    *   **macOS/Linux:**
-        ```bash
-        python3 -m venv venv
-        source venv/bin/activate
-        ```
+    *   **Windows:** `python -m venv venv` and `.\venv\Scripts\activate`
+    *   **macOS/Linux:** `python3 -m venv venv` and `source venv/bin/activate`
 
-3.  **Install dependencies:**
-    It is recommended to install the package in editable mode:
+3.  **Install in editable mode:**
     ```bash
     pip install -e .
     ```
 
 4.  **Configure API Keys (Local Mode):**
-    For **Local Mode**, you need to provide your own API keys. Create a `.env` file in the root directory and add your keys:    
+    Create a `.env` file in the root directory:
     ```env
     GROQ_API_KEY=your_groq_api_key_here
     GEMINI_API_KEY=your_gemini_api_key_here
     ```
-    If these keys are not found, `vorp` will automatically switch to **Cloud Mode**.
-
-5.  **Cloud Mode Configuration (Optional):**
-    If you are running your own backend server or wish to use a specific Cloud Mode instance, you can configure `vorp` to point to it.
-    Add the following to your `.env` file:
-    ```env
-    VORP_BACKEND_URL="https://your-custom-backend-url.com/chat"
-    VORP_ACCESS_TOKEN="your_access_token" # Only needed if your backend requires a custom token
-    ```
-    *Note: The CLI has a hardcoded public access token that is used if `VORP_ACCESS_TOKEN` is not explicitly provided.*
 
 ## 💻 Usage
 
@@ -77,114 +60,58 @@ vorp
 
 ### Interactive Commands
 
-Once inside the chat interface, you can use the following slash commands:
-
 | Command | Description |
 | :--- | :--- |
-| `/index <path>` | Scans and indexes the specified directory. This creates a searchable vector index for RAG. |
-| `/rag` | Toggles RAG mode on or off. When enabled, the assistant retrieves context from the indexed project. |
+| `/index <path>` | Scans and indexes the specified directory for RAG. |
+| `/rag` | Toggles RAG mode on or off. |
 | `/add <file>` | Loads the content of a specific file into the active chat context. |
-| `/context` | Displays a list of currently loaded files and the active RAG project path. |
+| `/context` | Displays currently loaded files and the active RAG project. |
+| `/key` | Interactive setup for your API keys. |
 | `/clear` | Clears the terminal screen. |
 | `/exit-v` | Exits the application and **saves** the current chat history. |
 | `/exit` | Exits the application and **deletes** the current chat history. |
 
 ### CLI Arguments
 
-You can configure `vorp` at startup using these flags:
-
 | Flag | Description |
 | :--- | :--- |
-| `--model <id>` | Starts the session with a specific model (e.g., `groq/llama-3.3-70b-versatile`). |
-| `--list` | Lists all supported models and their IDs, then exits. |
-| `--help` | Displays the help message. |
+| `--model <id>` | Starts the session with a specific model ID. |
+| `--list` | Lists all supported models and their IDs. |
 
-*Example:*
-```bash
-vorp --model "gemini/gemini-2.5-pro"
-```
+## 🏗️ Architecture & Capabilities
+
+### Core System
+Vorp is built using **Typer** for the CLI structure and **Rich** for beautiful terminal rendering (Markdown, Spinners, Tables). It uses **LiteLLM** to provide a unified interface to multiple LLM providers.
+
+### Autonomous Capabilities (Tools)
+In **Local Mode**, Vorp provides the LLM with a set of tools to interact with your system:
+*   **`read_file`**: Allows the AI to examine your code.
+*   **`write_file`**: Enables the AI to create or update files (overwrites entire content).
+*   **`delete_file`**: Permanently removes files (requires confirmation).
+*   **`list_files`**: Lets the AI explore your directory structure.
+*   **`run_shell_command`**: Allows the AI to run tests, install packages, or use git (requires confirmation).
+
+### RAG (Retrieval-Augmented Generation)
+The RAG system ensures the AI has a deep understanding of your specific codebase:
+1.  **Ingestion:** Files are split using a **Sliding Window** (1000 chars, 200 overlap).
+2.  **Embeddings:** Uses `all-MiniLM-L6-v2` locally via **Sentence-Transformers**.
+3.  **Storage:** Vectors are stored in **ChromaDB** at `~/.vorp_rag_db`.
+4.  **Retrieval:** Uses Cosine Similarity filtered by `project_id` to fetch the top 5 most relevant code snippets.
+
+### Cloud Proxy Mode
+For a zero-config experience, Vorp can route requests through a **FastAPI-based proxy**. This proxy securely handles API keys and streams responses back to the CLI using Server-Sent Events (SSE).
 
 ## ⚙️ Configuration
 
-Advanced configuration can be found in `src/vorp/constants.json`. You can modify this file to:
-
-*   **Add/Remove Supported Models:** Update the `SUPPORTED_MODELS` list.
-*   **Change Default Model:** Update `DEFAULT_MODEL`.
-*   **Customize RAG Settings:** Modify `RAG_IGNORE_DIRS` and `RAG_IGNORE_EXTS` to control which files are indexed.
-*   **System Prompt:** Tweak the `SYSTEM_PROMPT_TEMPLATE` to change the assistant's behavior.
-
-## 🏗️ Architecture
-
-The Retrieval-Augmented Generation (RAG) system in `vorp` is built for speed and privacy. Here is how it works under the hood:  
-
-1.  **Ingestion & Chunking:**
-    *   When you run `/index`, the system walks through your project directory.
-    *   Files are read and split into smaller segments using a **Sliding Window** approach (1000 characters with 200 character overlap). This ensures that context at the boundaries of chunks is preserved.
-
-2.  **Embedding Generation:**
-    *   Each chunk is passed through the `all-MiniLM-L6-v2` model. This is a lightweight, high-performance model that runs locally on your CPU.
-    *   The model converts the text code into a 384-dimensional vector (a list of numbers representing the semantic meaning).   
-
-3.  **Vector Storage (ChromaDB):**
-    *   These vectors are stored in **ChromaDB**, a persistent local vector database located at `~/.vorp_rag_db`.
-    *   **Isolation Layer:** Every vector is tagged with a `project_id` metadata field (the absolute path of the project). This acts as a strict filter, ensuring that queries only search within the active project's scope.
-
-4.  **Retrieval (Cosine Similarity):**
-    *   When you ask a question in RAG mode, your query is embedded using the same model.
-    *   The database performs a similarity search (using Cosine Similarity) to find the top 5 chunks that are mathematically closest to your query.
-    *   This retrieval is strictly filtered by the active `project_id`.
-
-5.  **Context Injection:**
-    *   The retrieved code snippets are formatted and injected into the LLM's system prompt.
-    *   The LLM then generates an answer using this retrieved knowledge, allowing it to "see" your code.
-
-## ☁️ Cloud Mode Backend
-
-For users who prefer not to manage their own API keys, `vorp` can operate in **Cloud Mode**. In this mode, the CLI routes chat requests through a proxy backend server you host. This server securely holds your LLM API keys and handles the communication with providers like Groq and Google Gemini.
-
-**Architecture:**
-*   The CLI sends chat requests to your hosted backend (e.g., `https://your-backend.vercel.app/chat`).
-*   The backend validates an `Authorization` header with an access token.
-*   The backend securely uses its own environment variables (`GROQ_API_KEY`, `GEMINI_API_KEY`) to call the LLM providers.       
-*   LLM responses are streamed back through the backend to the CLI.
-
-**Benefits:**
-*   **Frictionless User Experience:** Users don't need to provide their own API keys.
-*   **Centralized Control:** You control API key management, rate limits, and monitoring on your backend.
-*   **Security:** Your private API keys are never exposed to client-side applications.
-
-**Deployment (Example using Vercel):**
-
-1.  **Project Setup:**
-    *   Ensure your `server/` directory contains `app.py` and `requirements.txt`.
-    *   Place a `vercel.json` file in your project root with the following configuration:
-        ```json
-        {
-          "version": 2,
-          "builds": [
-            {
-              "src": "server/app.py",
-              "use": "@vercel/python",
-              "config": { "maxLambdaSize": "15mb", "runtime": "python3.10" }
-            }
-          ],
-          "routes": [
-            { "src": "/(.*)", "dest": "server/app.py" }
-          ]
-        }
-        ```
-2.  **Host on Vercel:**
-    *   Push your project to GitHub.
-    *   Import into Vercel, setting **Root Directory** to `server`.
-    *   Add Environment Variables: `GROQ_API_KEY`, `GEMINI_API_KEY`, and `VORP_ACCESS_TOKEN`.
-    *   Deploy.
+Advanced configuration is managed via `src/vorp/constants.json`. You can customize:
+*   **Models:** Add or remove supported model IDs.
+*   **Ignore Patterns:** Define which files/folders RAG should skip.
+*   **System Prompt:** Modify the core instructions given to the AI.
 
 ## 🔮 Roadmap
-
-*   **File Editing:** Capabilities for the agent to autonomously modify files. (In Progress)
-*   **Command Execution:** Safe execution of shell commands for testing and linting. (In Progress)
-*   **Diff View:** Enhanced visualization of code changes.
+*   **Multi-file Editing:** Improving the logic for refactoring across multiple files.
+*   **Better Diff Support:** Visualizing changes before they are applied.
+*   **Plugin System:** Allow users to define custom tools.
 
 ## 🤝 Contributing
-
-Contributions are welcome. Please open an issue or submit a pull request for any improvements.
+Contributions are welcome! Please open an issue or submit a pull request.
