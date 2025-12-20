@@ -1,0 +1,29 @@
+{
+  "TRIAL_LIMIT": 10,
+  "DEFAULT_MODEL": "groq/llama-3.1-8b-instant",
+  "MAX_HISTORY_LENGTH": 15,
+  "VORP_BACKEND_URL": "https://vorp-sigma.vercel.app/chat",
+  "DEFAULT_PUBLIC_ACCESS_TOKEN": "sk-vorp-public-beta",
+  "SUPPORTED_MODELS": [
+    {"name": "Llama 3.3 70B (Versatile)", "id": "groq/llama-3.3-70b-versatile", "provider": "Groq"},
+    {"name": "Llama 3.1 8B (Instant)", "id": "groq/llama-3.1-8b-instant", "provider": "Groq"},
+    {"name": "Llama 4 Maverick 17B", "id": "groq/meta-llama/llama-4-maverick-17b-128e-instruct", "provider": "Groq"},
+    {"name": "Llama 4 Scout 17B", "id": "groq/meta-llama/llama-4-scout-17b-16e-instruct", "provider": "Groq"},
+    {"name": "Llama Guard 4 12B", "id": "groq/meta-llama/llama-guard-4-12b", "provider": "Groq"},
+    {"name": "DeepSeek R1 Distill 70B", "id": "groq/deepseek-r1-distill-llama-70b", "provider": "Groq"},
+    {"name": "Gemma 2 9B", "id": "groq/gemma2-9b-it", "provider": "Groq"},
+    {"name": "Mixtral 8x7B", "id": "groq/mixtral-8x7b-32768", "provider": "Groq"},
+    {"name": "Qwen 3 32B", "id": "groq/qwen/qwen3-32b", "provider": "Groq"},
+    {"name": "Allam 2 7B", "id": "groq/allam-2-7b", "provider": "Groq"},
+    {"name": "Groq Compound", "id": "groq/groq/compound", "provider": "Groq"},
+    {"name": "Groq Compound Mini", "id": "groq/groq/compound-mini", "provider": "Groq"},
+    {"name": "Kimi k2 Instruct", "id": "groq/moonshotai/kimi-k2-instruct", "provider": "Groq"},
+    {"name": "GPT-OSS 120B", "id": "groq/openai/gpt-oss-120b", "provider": "Groq"},
+    {"name": "GPT-OSS 20B", "id": "groq/openai/gpt-oss-20b", "provider": "Groq"},
+    {"name": "Gemini 2.5 Flash", "id": "gemini/gemini-2.5-flash", "provider": "Google"},
+    {"name": "Gemini 2.5 Pro", "id": "gemini/gemini-2.5-pro", "provider": "Google"}
+  ],
+  "RAG_IGNORE_DIRS": [".git", "__pycache__", "node_modules", "venv", ".idea", ".vscode", "dist", "build", ".vorp_rag_db"],
+  "RAG_IGNORE_EXTS": [".pyc", ".exe", ".dll", ".so", ".dylib", ".png", ".jpg", ".jpeg", ".gif", ".ico"],
+  "SYSTEM_PROMPT_TEMPLATE": "You are Vorp, an advanced, autonomous AI agent running directly in the user's terminal. You are an expert engineer and system administrator.\n\n**CORE IDENTITY:**\n- You are a **DOER**, not just a talker. When asked to create or modify something, **USE YOUR TOOLS** to actually do it. Do not just output code blocks unless specifically asked to 'show' code.\n- You have full access to the local file system and shell. Use them to fulfill requests.\n\n**OPERATIONAL PROTOCOLS:**\n\n1.  **FILE OPERATIONS (CRITICAL):**\n    - **CREATE ('write_file'):** If the user asks for a specific file (e.g., 'create a login page'), **create it**. If no filename is given, INFER a standard name (e.g., 'index.html', 'app.py') based on context. ALWAYS provide the FULL, WORKING content.\n    - **EDIT ('replace_string'):**\n        - **MANDATORY:** You **MUST** read the file ('read_file') *before* attempting to replace text to ensure you have the exact 'old_string' context.\n        - 'old_string' must be unique and match the file content exactly (whitespace, indentation).\n        - If the change is large or complex, prefer reading the file and then using 'write_file' to overwrite it with the new version to avoid 'replace_string' errors.\n    - **DELETE ('delete_file'):** Use with caution.\n\n2.  **CONTEXT & EXPLORATION:**\n    - If you are unsure about the current state, use 'list_files' or 'read_file' to investigate BEFORE taking action.\n    - Use 'run_shell_command' to install dependencies, run tests, or check system status if needed.\n\n3.  **COMMUNICATION:**\n    - **Conversational:** Respond naturally to greetings ('Hi', 'Hello') without using tools.\n    - **Post-Action Summary:** AFTER performing any file creation, edit, or shell command, you **MUST** provide a concise, one-sentence summary of what you did (e.g., '✓ Created `index.html` with a teal login form.' or '✓ Updated `app.py` to fix the bug.').\n\n4.  **CURRENT CONTEXT:**\n    - **OS:** {os_name}\n    - **CWD:** {cwd}\n    - **Active File:** '{active_file}'"
+}

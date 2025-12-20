@@ -1,117 +1,213 @@
-# 🧠 Vorp
-
-## 🎬 Demo
+# 🧠 Vorp: The Intelligent Terminal Companion
 
 ![vorp demo](assets/demo.gif)
 
-**Vorp** is a terminal-based AI pair programmer and companion. It seamlessly indexes your codebase, allowing you to ask context-aware questions, retrieve relevant code snippets, and even modify files or execute commands without leaving your command line environment.
+**Vorp** is not just another CLI tool; it is a fully autonomous AI agent that lives in your terminal. It bridges the gap between natural language and system operations, allowing you to code, debug, refactor, and manage your system using plain English. 
 
-> **Note:** This project is under active development.
+Built on top of powerful Large Language Models (LLMs) and a robust tool-use framework, Vorp acts as a pair programmer that doesn't just suggest code—it **writes** it, **runs** it, and **fixes** it.
 
-## 🚀 Key Features
+---
 
-*   **Flexible Deployment:** Run `vorp` in two modes:
-    *   **Local Mode:** Use your own API keys for direct access to LLM providers (Groq, Google Gemini).
-    *   **Cloud Mode:** Route requests through a secure proxy backend (either hosted by you or a public instance) for a frictionless experience without personal API keys.
-*   **RAG (Chat with Codebase):** Index any project folder to enable context-aware queries using local embeddings.
-*   **Autonomous Tools:** The agent can read, write, and manage files, list directories, and execute shell commands.
-*   **Session Persistence:** Chat history is saved locally, allowing you to resume sessions later.
-*   **Context Management:** Manually inject specific files into the context window for targeted assistance.
-*   **Safety First:** Critical operations like file deletion or shell execution require explicit user confirmation.
-*   **Cross-Platform:** Designed to work consistently on Windows (PowerShell/CMD), macOS, and Linux.
+## 📚 Table of Contents
 
-## 🛠️ Installation
+1.  [🚀 Quick Start](#-quick-start)
+2.  [✨ Core Capabilities](#-core-capabilities)
+3.  [🧠 Model Selection Guide](#-model-selection-guide)
+4.  [🛠️ Advanced Usage & Workflows](#-advanced-usage--workflows)
+5.  [🔒 Security & Privacy](#-security--privacy)
+6.  [🏗️ Under the Hood (Architecture)](#-under-the-hood-architecture)
+7.  [❓ Troubleshooting & FAQ](#-troubleshooting--faq)
+8.  [🤝 Contributing](#-contributing)
 
-### Via PyPI (Recommended)
-You can install Vorp directly from PyPI:
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Python 3.10+**
+- A terminal (PowerShell, CMD, Bash, Zsh)
+- **API Keys** (Optional but Recommended): [Groq](https://console.groq.com/keys) or [Google Gemini](https://aistudio.google.com/app/apikey).
+
+### Installation
+
+#### Option A: Install via PyPI (Stable)
+The easiest way to get started is to install the latest stable release.
 ```bash
 pip install vorp
 ```
 
-### From Source
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/SiddharthBayapureddy/vorp.git
-    cd vorp
-    ```
+#### Option B: Install from Source (Bleeding Edge)
+For developers who want the latest features:
+```bash
+git clone https://github.com/SiddharthBayapureddy/vorp.git
+cd vorp
+# Create a virtual environment (Recommended)
+python -m venv venv
+# Activate it:
+# Windows: .\venv\Scripts\activate
+# Linux/Mac: source venv/bin/activate
+# Install
+pip install -e .
+```
 
-2.  **Create a virtual environment:**
-    *   **Windows:** `python -m venv venv` and `.\venv\Scripts\activate`
-    *   **macOS/Linux:** `python3 -m venv venv` and `source venv/bin/activate`
-
-3.  **Install in editable mode:**
-    ```bash
-    pip install -e .
-    ```
-
-4.  **Configure API Keys (Local Mode):**
-    Create a `.env` file in the root directory:
-    ```env
-    GROQ_API_KEY=your_groq_api_key_here
-    GEMINI_API_KEY=your_gemini_api_key_here
-    ```
-
-## 💻 Usage
-
-Start the application:
+### Initial Setup
+Run Vorp for the first time:
 ```bash
 vorp
 ```
+Vorp will start in **Cloud Mode** (Trial) by default. To unlock full power, set up your keys:
+1.  Run `/key` inside the Vorp chat.
+2.  Paste your Groq or Gemini API key.
+3.  Vorp will switch to **Local Mode**, giving you direct access to the models and tool capabilities.
 
-### Interactive Commands
+---
 
-| Command | Description |
-| :--- | :--- |
-| `/index <path>` | Scans and indexes the specified directory for RAG. |
-| `/rag` | Toggles RAG mode on or off. |
-| `/add <file>` | Loads the content of a specific file into the active chat context. |
-| `/context` | Displays currently loaded files and the active RAG project. |
-| `/key` | Interactive setup for your API keys. |
-| `/clear` | Clears the terminal screen. |
-| `/exit-v` | Exits the application and **saves** the current chat history. |
-| `/exit` | Exits the application and **deletes** the current chat history. |
+## ✨ Core Capabilities
 
-### CLI Arguments
+Vorp is designed to be an **agent**, meaning it takes actions to achieve goals.
 
-| Flag | Description |
-| :--- | :--- |
-| `--model <id>` | Starts the session with a specific model ID. |
-| `--list` | Lists all supported models and their IDs. |
+### 1. Autonomous File Management
+Vorp can Create, Read, Update, and Delete (CRUD) files.
+*   **"Create a basic HTML5 boilerplate in index.html"** -> Vorp writes the file.
+*   **"Read config.json and fix the syntax error"** -> Vorp reads, thinks, and applies the fix.
+*   **"Refactor src/main.py to use async functions"** -> Vorp rewrites the code.
 
-## 🏗️ Architecture & Capabilities
+### 2. Chat with Your Codebase (RAG)
+Retrieval-Augmented Generation (RAG) allows Vorp to "learn" your project.
+*   **Index your project:** `/index ./my-project`
+*   **Ask questions:** "How is authentication handled in this app?"
+*   **Benefit:** Vorp retrieves the exact files and functions relevant to your query, reducing hallucinations and enabling large-project understanding.
 
-### Core System
-Vorp is built using **Typer** for the CLI structure and **Rich** for beautiful terminal rendering (Markdown, Spinners, Tables). It uses **LiteLLM** to provide a unified interface to multiple LLM providers.
+### 3. System Operations
+Vorp can execute shell commands (with your permission).
+*   **"Install the dependencies in requirements.txt"** -> Runs `pip install -r requirements.txt`.
+*   **"Run the unit tests and tell me which ones failed"** -> Runs `pytest` and analyzes the output.
+*   **"Git commit my changes with a message about the UI update"** -> Stages and commits files.
 
-### Autonomous Capabilities (Tools)
-In **Local Mode**, Vorp provides the LLM with a set of tools to interact with your system:
-*   **`read_file`**: Allows the AI to examine your code.
-*   **`write_file`**: Enables the AI to create or update files (overwrites entire content).
-*   **`delete_file`**: Permanently removes files (requires confirmation).
-*   **`list_files`**: Lets the AI explore your directory structure.
-*   **`run_shell_command`**: Allows the AI to run tests, install packages, or use git (requires confirmation).
+### 4. Context Management
+*   **`/add <file>`**: Manually add a file to the conversation context. Great for debugging a specific file.
+*   **`/context`**: See what files and RAG indices are currently active.
+*   **`/clear`**: Wipe the screen to focus on the current task.
 
-### RAG (Retrieval-Augmented Generation)
-The RAG system ensures the AI has a deep understanding of your specific codebase:
-1.  **Ingestion:** Files are split using a **Sliding Window** (1000 chars, 200 overlap).
-2.  **Embeddings:** Uses `all-MiniLM-L6-v2` locally via **Sentence-Transformers**.
-3.  **Storage:** Vectors are stored in **ChromaDB** at `~/.vorp_rag_db`.
-4.  **Retrieval:** Uses Cosine Similarity filtered by `project_id` to fetch the top 5 most relevant code snippets.
+---
 
-### Cloud Proxy Mode
-For a zero-config experience, Vorp can route requests through a **FastAPI-based proxy**. This proxy securely handles API keys and streams responses back to the CLI using Server-Sent Events (SSE).
+## 🧠 Model Selection Guide
 
-## ⚙️ Configuration
+Vorp supports a variety of models via Groq and Gemini. Choosing the right model is crucial for performance and cost.
 
-Advanced configuration is managed via `src/vorp/constants.json`. You can customize:
-*   **Models:** Add or remove supported model IDs.
-*   **Ignore Patterns:** Define which files/folders RAG should skip.
-*   **System Prompt:** Modify the core instructions given to the AI.
+| Model | Provider | Best For | Speed | Context |
+| :--- | :--- | :--- | :--- | :--- |
+| **Llama 3.1 8B (Instant)** | Groq | **Default.** Quick chats, simple edits, shell commands. | ⚡️⚡️⚡️ | 8k |
+| **Llama 3.3 70B** | Groq | **Complex Coding.** Refactoring, architecting, difficult logic. | ⚡️⚡️ | 128k |
+| **Gemini 2.5 Flash** | Google | **Large Context.** Analyzing massive files or logs. | ⚡️⚡️ | 1M+ |
+| **DeepSeek R1 Distill** | Groq | **Reasoning.** Math, logic puzzles, intricate algorithms. | ⚡️ | 128k |
 
-## 🔮 Roadmap
-*   **Multi-file Editing:** Improving the logic for refactoring across multiple files.
-*   **Better Diff Support:** Visualizing changes before they are applied.
-*   **Plugin System:** Allow users to define custom tools.
+**💡 Pro Tip:**
+*   Start with **Llama 3.1 8B** for speed.
+*   Switch to **Llama 3.3 70B** (`vorp --model groq/llama-3.3-70b-versatile`) if the agent gets stuck or needs to generate high-quality code.
+*   Use **Gemini** if you need to paste a 5,000-line log file.
+
+To see all available models:
+```bash
+vorp --list
+```
+
+---
+
+## 🛠️ Advanced Usage & Workflows
+
+### The "Agentic" Workflow
+Don't just use Vorp as a chatbot. Use it as a **coworker**.
+
+**Bad Prompt:** "Write code for a snake game."
+**Good Prompt (Agentic):** "Create a file named `snake.py`. Implement a classic Snake game using the `pygame` library. Then, create a `requirements.txt` file with the necessary dependencies."
+
+**Why?** The second prompt triggers Vorp's **tool use**. It will:
+1.  Create `snake.py`.
+2.  Write the game code.
+3.  Create `requirements.txt`.
+4.  Write `pygame` into it.
+5.  Summarize its actions.
+
+### Debugging Workflow
+1.  **Add the file:** `/add src/buggy_script.py`
+2.  **Explain the error:** "I'm getting a RecursionError when I run this."
+3.  **Let Vorp fix it:** "Analyze the logic, find the base case missing, and apply the fix."
+4.  **Verify:** "Run the script to verify it works." (Vorp will run `python src/buggy_script.py` and check the output).
+
+### RAG Workflow for New Codebases
+1.  **Clone the repo:** `git clone ...`
+2.  **Index it:** `vorp` -> `/index .`
+3.  **Onboarding:** "Explain the high-level architecture of this project. Where is the entry point?"
+4.  **Feature Add:** "I need to add a new API route for user login. Based on existing patterns in `routes/`, how should I implement this?"
+
+---
+
+## 🔒 Security & Privacy
+
+Vorp runs **locally** on your machine.
+*   **Local Mode:** Your code *never* leaves your machine except to be sent to the LLM provider (Groq/Google) for inference. Vorp does *not* store your code on any external servers.
+*   **API Keys:** Your API keys are stored in `~/.vorp_config.json` on your local machine. They are never transmitted to Vorp developers.
+*   **Human-in-the-Loop:** For dangerous operations (`delete_file`, `run_shell_command`), Vorp **halts and asks for permission**. You always have the final say.
+*   **Sandboxing (Recommended):** While Vorp is safe, it's always good practice to run agentic AI tools inside a virtual environment or a container (Docker) to limit accidental system changes.
+
+---
+
+## 🏗️ Under the Hood (Architecture)
+
+Vorp is a modular Python application designed for extensibility.
+
+### 1. The Brain (`src/vorp/main.py`)
+This is the command center. It initializes the `typer` app, handles the REPL (Read-Eval-Print Loop), and manages the conversation state. It acts as the "Tool Controller," intercepting the LLM's requests to use tools and executing the corresponding Python functions.
+
+### 2. The Toolbelt (`src/vorp/tools.py`)
+Defines the `read_file`, `write_file`, `replace_string`, etc. functions. These are pure Python functions that interface with the OS. The `get_tool_definitions()` function generates the JSON schema that tells the LLM how to use these tools.
+
+### 3. The Memory (`src/vorp/rag.py`)
+Handles the RAG pipeline.
+*   **Ingestion:** Scans directories, respecting `.gitignore` and `RAG_IGNORE_DIRS`.
+*   **Chunking:** Splits code into semantic chunks (overlapping windows) to preserve context.
+*   **Vector Database:** Uses `ChromaDB` (local) to store embeddings generated by `sentence-transformers`.
+
+### 4. The Connector (`litellm`)
+We use `litellm` as an abstraction layer. This allows Vorp to swap between Groq, Gemini, OpenAI, Anthropic, or even local Ollama models with a single line of configuration change.
+
+---
+
+## ❓ Troubleshooting & FAQ
+
+### "I encountered a hiccup."
+*   **Cause:** Usually an API timeout or the model generated invalid JSON for a tool call.
+*   **Fix:** Just type "Retry" or rephrase your request. If it persists, check your internet connection or switch models.
+
+### "Rate Limit Reached"
+*   **Cause:** You are using the free tier of Groq or Gemini and have sent too many messages quickly.
+*   **Fix:** Wait a minute or switch to a different model (e.g., from Llama 70B to 8B).
+
+### "The model keeps listing files without me asking!"
+*   **Fix:** We've updated the system prompt to prevent this, but LLMs can be unpredictable. Tell it explicitly: "Stop listing files. Just answer the question."
+
+### "Can Vorp delete my whole hard drive?"
+*   **No.** Vorp requires explicit `y/n` confirmation for every single deletion and shell command. Unless you blindly type `y` to "delete /", you are safe.
+
+---
 
 ## 🤝 Contributing
-Contributions are welcome! Please open an issue or submit a pull request.
+
+We love contributions! Whether it's a new feature, a bug fix, or a documentation improvement.
+
+1.  **Fork** the repo.
+2.  **Create** a branch: `git checkout -b feature/amazing-feature`.
+3.  **Commit** your changes.
+4.  **Push** to the branch.
+5.  **Open** a Pull Request.
+
+**Development Tips:**
+*   Run `pip install -e .` to reflect changes immediately.
+*   Check `src/vorp/constants.json` to tweak system prompts during testing.
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/SiddharthBayapureddy">Siddharth Bayapureddy</a>
+</p>
